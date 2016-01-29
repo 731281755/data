@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop-3.1.xsd
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-3.1.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx-3.1.xsd
+        ">
+	<!-- 开启注解注释注入bean -->
+	<context:annotation-config />
+
+	<!-- 配置扫描注解,不扫描@Controller注解 -->
+	<context:component-scan base-package="com.meetyou">
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+
+	<!-- 引入配置文件 -->
+	<bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations" value="classpath:jdbc.properties" /><!-- 
+			location是位置的意思 -->
+	</bean>
+
+	<!-- 定义数据源 -->
+	<bean id="dataSource" name="dataSource"
+		class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<!-- 指定连接数据库的驱动 -->
+		<property name="driverClass" value="${jdbc.driverClassName}" />
+		<!-- 指定连接数据库的URL -->
+		<property name="jdbcUrl" value="${jdbc.url}" />
+		<!-- 指定连接数据库的用户名 -->
+		<property name="user" value="${jdbc.username}" />
+		<!-- 指定连接数据库的密码 -->
+		<property name="password" value="${jdbc.password}" />
+		<!-- 指定连接池中保留的最大连接数. Default:15 -->
+		<property name="maxPoolSize" value="${jdbc.maxPoolSize}" />
+		<!-- 指定连接池中保留的最小连接数 -->
+		<property name="minPoolSize" value="${jdbc.minPoolSize}" />
+		<!-- 指定连接池的初始化连接数 取值应在minPoolSize 与 maxPoolSize 之间.Default:3 -->
+		<property name="initialPoolSize" value="${jdbc.initialPoolSize}" />
+		<!-- 最大空闲时间,60秒内未使用则连接被丢弃。若为0则永不丢弃。 Default:0 -->
+		<property name="maxIdleTime" value="${jdbc.maxIdleTime}" />
+		<!-- 当连接池中的连接耗尽的时候c3p0一次同时获取的连接数. Default:3 -->
+		<property name="acquireIncrement" value="${jdbc.acquireIncrement}" />
+		<!-- 每60秒检查所有连接池中的空闲连接.Default:0 -->
+		<property name="idleConnectionTestPeriod" value="${jdbc.idleConnectionTestPeriod}" />
+		<!-- 在分配连接前后是否进行有效性测试 -->
+		<property name="testConnectionOnCheckout" value="${jdbc.testConnectionOnCheckout}" />
+	</bean>
+
+	<!-- 将sessionFactory交给Spring管理 -->
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="hibernateProperties">
+			<value>
+				hibernate.dialect=org.hibernate.dialect.MySQL5Dialect
+				hibernate.hbm2ddl.auto=update
+				hibernate.show_sql=false
+				hibernate.format_sql=true
+				hibernate.cache.use_second_level_cache=true
+			</value>
+		</property>
+		<!--使用hbm配置文件标明实体类 -->
+		<!-- <property name="mappingResources"> <list> <value>com/meetyou/model/User.hbm.xml</value> 
+			</list> </property> -->
+		<!--指明使用标注的实体类 -->
+		<!-- <property name="annotatedClasses"> <list> <value>com.meetyou.model.User</value> 
+			</list> </property> -->
+		<!--当然也可以不使用上面这种指定的方式，而使用包扫描的方式做为替换，推荐这种 -->
+		<property name="packagesToScan">
+			<list>
+				<value>com.meetyou.entity</value>
+			</list>
+		</property>
+	</bean>
+	<!-- 定义事物管理器 -->
+	<bean id="txManager"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+
+	<!-- 开启注解事物管理 -->
+	<tx:annotation-driven transaction-manager="txManager" />
+</beans>
